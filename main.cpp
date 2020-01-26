@@ -2,10 +2,13 @@
 #include <pcap.h>
 #include <cstdio>
 #include <byteswap.h>
+#include <unordered_map>
 
 #include "main.h"
 
-port_stats bandwidth[20];
+using namespace std;
+
+unordered_map<int, uint64_t> port_stats;
 
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
 #define SIZE_ETHERNET 14
@@ -16,26 +19,24 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
     u_int size_ip;
     u_int size_tcp;
 
-//    std::cout << "Packet length: " << header->len << std::endl;
-
     ethernet = (struct sniff_ethernet*)(packet);
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip) * 4;
 
     if (size_ip < 20) {
-//        std::cout << "Invalid IP header length: " << size_ip << " bytes" << std::endl;
+        cout << "Invalid IP header length: " << size_ip << " bytes" << endl;
         return;
     }
 
     if (ip->ip_p != 6) {
-//        printf("Not a TCP packet: %d\n", ip->ip_p);
+        printf("Not a TCP packet: %d\n", ip->ip_p);
         return;
     }
 
     tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
     size_tcp = TH_OFF(tcp) * 4;
     if (size_tcp < 20) {
-//        std::cout << "Invalid TCP header length: " << size_tcp << " bytes" << std::endl;
+        cout << "Invalid TCP header length: " << size_tcp << " bytes" << endl;
         return;
     }
 
@@ -44,9 +45,10 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 
     payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
-//    if (tcp->th_sport == 443 || tcp->th_dport == 443 || tcp->th_sport == 80 || tcp->th_dport == 80){
-        printf("Src Port: %d, Dst Port: %d\n", src_port, dst_port);
-//    }
+//    printf("Src Port: %d, Dst Port: %d\n", src_port, dst_port);
+
+    port_stats[dst_port] += header->len;
+    cout << "Port " << to_string(dst_port) << ": " << to_string(port_stats[dst_port]) << " bytes" << endl;
 
     return;
 }
