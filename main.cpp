@@ -7,6 +7,7 @@
 #include <mutex>
 #include <chrono>
 #include <signal.h>
+#include <iomanip>
 
 #include "main.h"
 
@@ -111,6 +112,8 @@ int main(int argc, char* argv[]) {
     sigaction(SIGINT, &sig_int_handler, nullptr);
 
     char *dev = argv[1];
+    uint seconds = atoi(argv[2]);
+
     char errbuf[PCAP_ERRBUF_SIZE];
     struct pcap_pkthdr header;
     const u_char *packet;
@@ -129,8 +132,12 @@ int main(int argc, char* argv[]) {
     while (running) {
         this_thread::sleep_for(chrono::seconds(1));
 
-        if (timer == 10) {
+        if (timer == seconds) {
             timer = 0;
+
+            time_t current_time = chrono::system_clock::to_time_t(chrono::system_clock::now());
+            tm tm = *localtime(&current_time);
+            cout << put_time(&tm, "%F %T") << endl;
 
             if (proto_stats_mutex.try_lock()) {
                 cout << "TCP " << proto_stats[proto::tcp] << " ";
