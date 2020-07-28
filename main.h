@@ -12,6 +12,9 @@
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
 
+/* Ethernet frame size */
+#define SIZE_ETHERNET 14
+
 /* Ethernet header */
 struct sniff_ethernet {
     u_char ether_dhost[ETHER_ADDR_LEN]; /* Destination host address */
@@ -63,9 +66,23 @@ struct sniff_tcp {
     u_short th_urp;		/* urgent pointer */
 };
 
+struct sniff_udp {
+    u_short uh_sport;	/* source port */
+    u_short uh_dport;	/* destination port */
+    u_short uh_len;
+    u_short uh_chk;
+
+};
+
 struct port_stats {
     u_short port;
     u_int64_t bytes;
+};
+
+enum proto {
+    tcp = 0,
+    udp = 1,
+    icmp = 2
 };
 
 #endif //DATASPY_MAIN_H
