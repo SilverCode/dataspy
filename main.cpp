@@ -13,6 +13,10 @@
 
 #define CLIENT_PORT_START 49152
 
+#if defined(__FreeBSD__)
+#define __bswap_16 bswap16
+#endif
+
 using namespace std;
 
 unordered_map<int, uint64_t> port_stats;
