@@ -1,7 +1,7 @@
 #include <iostream>
 #include <pcap.h>
 #include <cstdio>
-#include <byteswap.h>
+//#include <byteswap.h>
 #include <unordered_map>
 #include <thread>
 #include <mutex>
@@ -10,6 +10,8 @@
 #include <iomanip>
 
 #include "main.h"
+
+#define CLIENT_PORT_START 49152
 
 using namespace std;
 
@@ -24,6 +26,16 @@ void update_proto_stats(proto protocol, uint64_t size) {
     proto_stats_mutex.lock();
     proto_stats[protocol] += size;
     proto_stats_mutex.unlock();
+}
+
+u_short get_port(u_short dst_port, u_short src_port) {
+    if (dst_port >= CLIENT_PORT_START && src_port < CLIENT_PORT_START) {
+        return src_port;
+    } else if (src_port >= CLIENT_PORT_START && dst_port < CLIENT_PORT_START) {
+        return dst_port;
+    }
+
+    return 0;
 }
 
 void handle_tcp_packet(const sniff_ip *ip, const struct pcap_pkthdr *header, const u_char *packet) {
@@ -47,7 +59,7 @@ void handle_tcp_packet(const sniff_ip *ip, const struct pcap_pkthdr *header, con
 //    payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
     // TODO: Find better way to tell is we should be using the src_port or the dst_port
-    u_short metric_port = dst_port > 9999 ? src_port : dst_port;
+    u_short metric_port = get_port(dst_port, src_port);
 
     port_stats_mutex.lock();
     port_stats[metric_port] += header->len;
@@ -66,7 +78,7 @@ void handle_udp_packet(const sniff_ip *ip, const struct pcap_pkthdr *header, con
     u_short dst_port = __bswap_16(udp->uh_dport);
 
     // TODO: Find better way to tell is we should be using the src_port or the dst_port
-    u_short metric_port = dst_port > 9999 ? src_port : dst_port;
+    u_short metric_port = get_port(dst_port, src_port);
 
     port_stats_mutex.lock();
     port_stats[metric_port] += header->len;
