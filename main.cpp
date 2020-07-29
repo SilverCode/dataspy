@@ -1,7 +1,6 @@
 #include <iostream>
 #include <pcap.h>
 #include <cstdio>
-//#include <byteswap.h>
 #include <unordered_map>
 #include <thread>
 #include <mutex>
@@ -39,7 +38,7 @@ u_short get_port(u_short dst_port, u_short src_port) {
         return dst_port;
     }
 
-    return 0;
+    return min(src_port, dst_port);
 }
 
 void handle_tcp_packet(const sniff_ip *ip, const struct pcap_pkthdr *header, const u_char *packet) {
